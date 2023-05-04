@@ -19,7 +19,7 @@ public class Test {
         b = new BitMap();
 //        b.mkBitMap("cafe","mOption");
 //        b.mkBitMap("cafe","mCategory");
-        b.andBitMap("cafe","mOption","핫","mCategory","Tea");
+//        b.andBitMap("cafe","mOption","핫","mCategory","Tea");
 //        b.orBitMap("cafe","mOption","핫","mCategory","Tea");
 
     }
