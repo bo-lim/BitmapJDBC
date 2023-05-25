@@ -77,7 +77,7 @@ public class JDBC {
             closeConn(conn);
         }
     }
-    public void insertManyRecord(String tablename){
+    public void insertManyRecords(String tablename, int num){
         Connection conn = conDB();
 
         try{
@@ -86,7 +86,7 @@ public class JDBC {
             int j = 250;
             String sql = "INSERT INTO " + tablename + " VALUES( 0, ?, ?, ?, ?, ?, ?, now())";
             pstmt = conn.prepareStatement(sql);
-            for(int i=1;i<100000;i++) {
+            for(int i=1;i<num;i++) {
 
                 if(i%7!=0){j++;}
                 int ctgNum = rand.nextInt(4);
@@ -131,8 +131,6 @@ public class JDBC {
         }finally {
             closeConn(conn);
         }
-
-
     }
     public void mkIndex(String tablename, String colname){
         Connection conn = conDB();
@@ -239,7 +237,6 @@ public class JDBC {
 //        int[] resultSet = new int[cnt];
         Connection conn = conDB();
         try {
-
             String sql = "SELECT " + cols + " FROM " + tablename + " WHERE no=?";
             pstmt = conn.prepareStatement(sql);
             for(int i=0;i<index.size();i++) {
@@ -251,7 +248,6 @@ public class JDBC {
                             rs.getString(4) + " " + rs.getString(5) + rs.getString(6) + rs.getInt(7) + rs.getDate(8));
 
                 }
-
                 rs.close();
             }
             pstmt.close();
