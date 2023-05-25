@@ -1,3 +1,4 @@
+import javax.management.Query;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -5,8 +6,7 @@ import java.awt.event.ActionListener;
 
 public class MainView extends JFrame implements ActionListener {
     JTextField jt;
-    JButton BTsubmit;
-    JButton OneBT;
+    JButton BTsubmit, OneBT, QueryBT;
     JDBC j;
     String tablename;
     MainView(String tname){
@@ -20,8 +20,10 @@ public class MainView extends JFrame implements ActionListener {
         jt = new JTextField();
         BTsubmit = new JButton("INSERT");
         OneBT = new JButton("Only 1 RECORD INSERT");
+        QueryBT = new JButton("SQL");
         BTsubmit.addActionListener(this);
         OneBT.addActionListener(this);
+        QueryBT.addActionListener(this);
 //        BTsubmit.addMouseListener(this);
         jt.setText("1000");
         add(jl);
@@ -41,6 +43,10 @@ public class MainView extends JFrame implements ActionListener {
         }
         if(e.getSource()==OneBT){
             new OneRecordView(tablename);
+            this.setVisible(false);
+        }
+        if(e.getSource()== QueryBT){
+            new QueryView(tablename);
             this.setVisible(false);
         }
     }
