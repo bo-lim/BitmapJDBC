@@ -28,12 +28,8 @@ public class JDBC {
         Scanner sc = new Scanner(System.in);
         Connection conn = null;
         try {
-            // Class.forName("com.mysql.jdbc.Driver");
             Class.forName("com.mysql.cj.jdbc.Driver");
-            System.out.println("JDBC Connection Success");
-
             conn = DriverManager.getConnection("jdbc:mysql://localhost/cafe", "root", "11111111");
-            System.out.println("Connection Success!");
 
         }catch (ClassNotFoundException e){
             System.out.println("Failed Loading Driver");
@@ -56,7 +52,6 @@ public class JDBC {
         Connection conn = conDB();
 
         try {
-
             stmt = conn.createStatement();
             String sql = "CREATE TABLE " + tablename + "("+
                     "no INT NOT NULL AUTO_INCREMENT PRIMARY KEY,"+
@@ -68,8 +63,6 @@ public class JDBC {
                     "price INT,"+
                     "date TIMESTAMP"+
                     ")";
-            System.out.println(sql);
-
             stmt.execute(sql);
         }catch(SQLException e) {
             e.printStackTrace();
@@ -81,13 +74,11 @@ public class JDBC {
         Connection conn = conDB();
 
         try{
-
             Random rand = new Random();
             int j = 250;
             String sql = "INSERT INTO " + tablename + " VALUES( 0, ?, ?, ?, ?, ?, ?, now())";
             pstmt = conn.prepareStatement(sql);
             for(int i=1;i<num;i++) {
-
                 if(i%7!=0){j++;}
                 int ctgNum = rand.nextInt(4);
                 int chcnum = rand.nextInt(4);
@@ -138,10 +129,7 @@ public class JDBC {
             stmt = conn.createStatement();
             String sql = "CREATE INDEX NIDX ON " + tablename + "("+
                     colname+ ")";
-            System.out.println(sql);
-
             stmt.execute(sql);
-            System.out.println("Make INDEX");
         }catch(SQLException e) {
             e.printStackTrace();
         }finally {
@@ -154,11 +142,7 @@ public class JDBC {
         try {
             stmt = conn.createStatement();
             String sql = "SELECT COUNT(*) FROM " + tablename;
-            System.out.println(sql);
-
             rs = stmt.executeQuery(sql);
-            System.out.println("COUNT ROWS");
-
             if(rs.next()){cnt = rs.getInt(1);}
             rs.close();
         }catch(SQLException e) {
@@ -171,13 +155,7 @@ public class JDBC {
     public int getMapSize(String tablename,String colname){
         return optMap.size();
     }
-    public Map getReverseMap(){
-        Map reverseMap = new HashMap<String,Integer>();
-        for(int i=0;i<optMap.size();i++) {
-            reverseMap.put(optMap.get(i),i);
-        }
-        return reverseMap;
-    }
+
     public Map getMap(){
         return optMap;
     }
@@ -185,15 +163,11 @@ public class JDBC {
         Connection conn = conDB();
 
         optMap = getUniqVal(tablename,colname);
-        System.out.println(optMap);
         int[] resultSet = new int[cnt];
         try {
             stmt = conn.createStatement();
             String sql = "SELECT "+colname+" FROM " + tablename;
-            System.out.println(sql);
-
             rs = stmt.executeQuery(sql);
-            System.out.println("COUNT ROWS");
 
             int idx = 0;
             while(rs.next()){
@@ -202,7 +176,6 @@ public class JDBC {
                         resultSet[idx++] = i;
                     }
                 }
-
             }
             rs.close();
         }catch(SQLException e) {
@@ -224,7 +197,6 @@ public class JDBC {
             while(rs.next()){
                 optMap.put(i++,rs.getString(1));
             }
-
             rs.close();
         }catch(SQLException e) {
             e.printStackTrace();
@@ -233,20 +205,30 @@ public class JDBC {
         }
         return optMap;
     }
-    public void getRecords(String tablename, List<Integer> index, String cols){
-//        int[] resultSet = new int[cnt];
+    public String getRecords(String tablename, List<Integer> index, String cols){
         Connection conn = conDB();
+        String out = "";
         try {
             String sql = "SELECT " + cols + " FROM " + tablename + " WHERE no=?";
             pstmt = conn.prepareStatement(sql);
             for(int i=0;i<index.size();i++) {
                 pstmt.setInt(1, index.get(i));
                 rs = pstmt.executeQuery();
-
                 if (rs.next()) {
-                    System.out.println(rs.getInt(1) + " " + rs.getInt(2) + " " + rs.getInt(3) + " " +
-                            rs.getString(4) + " " + rs.getString(5) + rs.getString(6) + rs.getInt(7) + rs.getDate(8));
+                    if (cols.trim().equals("*")) {
+                        out += rs.getInt(2) + " " + rs.getInt(3) + " " +
+                                rs.getString(4) + " " + rs.getString(5) + " " +
+                                rs.getString(6) + " " + rs.getInt(7) + " " + rs.getDate(8) + "\n";
 
+                    }
+                    else{
+                        out += "\n";
+                        String[] col_list = cols.split(",");
+                        for(int c=0;c<col_list.length;c++) {
+                            col_list[c] = col_list[c].trim();
+                            out += rs.getString(c+1) + " ";
+                        }
+                    }
                 }
                 rs.close();
             }
@@ -256,8 +238,7 @@ public class JDBC {
             e.printStackTrace();
         }finally {
             closeConn(conn);
+            return out;
         }
     }
-
-
 }

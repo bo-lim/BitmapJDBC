@@ -19,7 +19,6 @@ public class TCView extends JFrame implements ActionListener{
         jt = new JTextField();
         BTsubmit = new JButton("START");
         BTsubmit.addActionListener(this);
-//        BTsubmit.addMouseListener(this);
         jt.setText("cafe");
         add(jl);
         add(jt);
@@ -38,6 +37,7 @@ public class TCView extends JFrame implements ActionListener{
         if(e.getSource()==BTsubmit){
             j = new JDBC();
 //            j.mkTable(table_name);
+//            mkIndex(tablename, "no")
             new MainView(table_name);
             this.setVisible(false);
         }

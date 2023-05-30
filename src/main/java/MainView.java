@@ -6,7 +6,7 @@ import java.awt.event.ActionListener;
 
 public class MainView extends JFrame implements ActionListener {
     JTextField jt;
-    JButton BTsubmit, OneBT, QueryBT;
+    JButton BTsubmit, OneBT, QueryBT, BitMapBT;
     JDBC j;
     String tablename;
     MainView(String tname){
@@ -14,22 +14,27 @@ public class MainView extends JFrame implements ActionListener {
         tablename = tname;
         setSize(800,500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new GridLayout(1,5));
+        setLayout(new GridLayout(2,3));
 
         JLabel jl = new JLabel("레코드 수 입력 : ");
         jt = new JTextField();
         BTsubmit = new JButton("INSERT");
         OneBT = new JButton("Only 1 RECORD INSERT");
         QueryBT = new JButton("SQL");
+        BitMapBT = new JButton(" Create BitMap Index");
+
         BTsubmit.addActionListener(this);
         OneBT.addActionListener(this);
         QueryBT.addActionListener(this);
+        BitMapBT.addActionListener(this);
 //        BTsubmit.addMouseListener(this);
         jt.setText("1000");
         add(jl);
         add(jt);
         add(BTsubmit);
         add(OneBT);
+        add(QueryBT);
+        add(BitMapBT);
         setVisible(true);
     }
     @Override
@@ -47,6 +52,10 @@ public class MainView extends JFrame implements ActionListener {
         }
         if(e.getSource()== QueryBT){
             new QueryView(tablename);
+            this.setVisible(false);
+        }
+        if(e.getSource()== BitMapBT){
+            new CIndexView(tablename);
             this.setVisible(false);
         }
     }

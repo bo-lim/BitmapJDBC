@@ -4,7 +4,7 @@ import java.util.*;
 public class BitMap {
     JDBC jdbc = null;
     int total = -1;
-    int bf =0;
+    int bf = 100;
     String[] COLNAMES = {"mCategory","mChoice","mOption","price"};
     public void conJDBC(){
         jdbc = new JDBC();
@@ -12,15 +12,24 @@ public class BitMap {
     }
     public void writeFile(char[] BMArr, String colname, String filename){
         try {
-            PrintWriter pw = new PrintWriter("./"+colname+"/" + filename + ".txt");
-            pw.print(BMArr);
-            pw.close();
+            File f = new File("./"+colname+"/"+filename+"/");
+            boolean result = f.mkdir();
+            if(!result) {
+                System.out.println("dir 만들기 실패");
+            }
+            int cnt = 0;
+            for(int i=0;i<=BMArr.length;i+=bf){
+                PrintWriter pw = new PrintWriter("./"+colname+"/" + filename + "/" + String.valueOf(cnt) + ".txt");
+                pw.print(BMArr);
+                cnt += 1;
+                pw.close();
+            }
         }catch(IOException e){e.printStackTrace();}
     }
-    public char[] readFile(String colname, String filename){
+    public char[] readFile(String colname, String filename, int filenum){
         String line = null;
         try {
-            BufferedReader br = new BufferedReader(new FileReader("./"+colname+"/" +filename+".txt"));
+            BufferedReader br = new BufferedReader(new FileReader("./" + colname + "/" + filename + "/" + String.valueOf(filenum) + ".txt"));
             line = br.readLine();
             br.close();
         }catch(IOException e){e.printStackTrace();}
@@ -36,6 +45,17 @@ public class BitMap {
         }catch(IOException e){e.printStackTrace();}
         String[] mapData = line.split(","); // 핫,아이스,
         return mapData;
+    }
+    public int getFileNum(String colname, String filename){
+        File f = new File("./"+colname+"/"+filename+"/");
+        if(f.isDirectory()) {
+            File[] flist = f.listFiles();
+            return flist.length;
+        }
+        else{
+            System.out.println("폴더를 찾을 수 없습니다.");
+            return -1;
+        }
     }
 
 
@@ -61,65 +81,129 @@ public class BitMap {
         File f = new File(colname);
         boolean result = f.mkdir();
         if(!result) {
-            System.out.println("dir 만들기 실패");
+            System.out.println("dir 만들기 실패!!");
         }
         String text = "";
         for(int i=0;i<map.size();i++) {
             text += map.get(i) + ",";
-            writeFile(text.toCharArray(),colname, colname+"_metadata");
+            try {
+                PrintWriter pw = new PrintWriter("./"+colname+"/" + colname+"_metadata" + ".txt");
+                pw.print(text.toCharArray());
+                pw.close();
+            }catch(IOException e){e.printStackTrace();}
         }
         for(int i=0;i<size;i++){
             writeFile(BMs[i].toCharArray(),colname, colname+'_'+Integer.toString(i));
         }
     }
+    public String oneCondBitMap4cnt(String tablename, String select, String colname1, String cond1){
+        String[] col1key = readMetaFile(colname1);
+        int result = 0;
 
-    public void andBitMap(String tablename, String colname1, String cond1 ,String colname2, String cond2){
+        int col_num1 = Arrays.asList(col1key).indexOf(cond1);
+        int total_file_num = getFileNum(colname1, colname1+"_"+col_num1);
+        for (int filenum = 0; filenum < total_file_num; filenum++) {
+            char[] bitStream1 = readFile(colname1, colname1+"_"+col_num1, filenum);
+            for(int i=0;i<bitStream1.length;i++){
+                if(bitStream1[i]=='1'){
+                    result += 1;
+                }
+            }
+        }
+        return String.valueOf(result);
+    }
+
+    public String andBitMap(String tablename, String select, String colname1, String cond1 ,String colname2, String cond2){
         String[] col1key = readMetaFile(colname1);
         String[] col2key = readMetaFile(colname2);
         List<Integer> result = new ArrayList<Integer>();
 
-//        Object col_num1 = col_map1.get(cond1);
         int col_num1 = Arrays.asList(col1key).indexOf(cond1);
         int col_num2 = Arrays.asList(col2key).indexOf(cond2);
-//        int col_num2 = (int) col_map2.get(cond1);
 
-        System.out.println(col_num1);
+        int total_file_num = getFileNum(colname1, colname1+"_"+col_num1);
+        for (int filenum = 0; filenum < total_file_num; filenum++) {
 
-        char[] bitStream1 = readFile(colname1, colname1+"_"+col_num1);
-        char[] bitStream2 = readFile(colname2, colname2+"_"+col_num2);
+            char[] bitStream1 = readFile(colname1, colname1 + "_" + col_num1, filenum);
+            char[] bitStream2 = readFile(colname2, colname2 + "_" + col_num2, filenum);
 
-        for(int i=0;i<bitStream1.length;i++){
-            if(bitStream1[i]=='1' && bitStream2[i]=='1'){
-                result.add(i+1);
+            for (int i = 0; i < bitStream1.length; i++) {
+                if (bitStream1[i] == '1' && bitStream2[i] == '1') {
+                    result.add(i + 1);
+                }
             }
         }
-        getRecord(result);
+        return getRecord(select, result);
     }
-    public void orBitMap(String tablename, String colname1, String cond1 ,String colname2, String cond2){
+    public String andBitMap4cnt(String tablename, String select, String colname1, String cond1 ,String colname2, String cond2){
+        String[] col1key = readMetaFile(colname1);
+        String[] col2key = readMetaFile(colname2);
+        int result = 0;
+
+        int col_num1 = Arrays.asList(col1key).indexOf(cond1);
+        int col_num2 = Arrays.asList(col2key).indexOf(cond2);
+
+        int total_file_num = getFileNum(colname1, colname1+"_"+col_num1);
+        for (int filenum = 0; filenum < total_file_num; filenum++) {
+
+            char[] bitStream1 = readFile(colname1, colname1 + "_" + col_num1, filenum);
+            char[] bitStream2 = readFile(colname2, colname2 + "_" + col_num2, filenum);
+
+            for (int i = 0; i < bitStream1.length; i++) {
+                if (bitStream1[i] == '1' && bitStream2[i] == '1') {
+                    result += 1;
+                }
+            }
+        }
+        return String.valueOf(result);
+    }
+    public String orBitMap(String tablename, String select, String colname1, String cond1 ,String colname2, String cond2){
         String[] col1key = readMetaFile(colname1);
         String[] col2key = readMetaFile(colname2);
         List<Integer> result = new ArrayList<Integer>();
 
-//        Object col_num1 = col_map1.get(cond1);
         int col_num1 = Arrays.asList(col1key).indexOf(cond1);
         int col_num2 = Arrays.asList(col2key).indexOf(cond2);
-//        int col_num2 = (int) col_map2.get(cond1);
 
-        System.out.println(col_num1);
+        int total_file_num = getFileNum(colname1, colname1+"_"+col_num1);
+        for (int filenum = 0; filenum < total_file_num; filenum++) {
 
-        char[] bitStream1 = readFile(colname1, colname1+"_"+col_num1);
-        char[] bitStream2 = readFile(colname2, colname2+"_"+col_num2);
+            char[] bitStream1 = readFile(colname1, colname1 + "_" + col_num1, filenum);
+            char[] bitStream2 = readFile(colname2, colname2 + "_" + col_num2, filenum);
 
-        for(int i=0;i<bitStream1.length;i++){
-            if(bitStream1[i]=='1' || bitStream2[i]=='1'){
-                result.add(i+1);
+            for (int i = 0; i < bitStream1.length; i++) {
+                if (bitStream1[i] == '1' || bitStream2[i] == '1') {
+                    result.add(i + 1);
+                }
             }
         }
-        getRecord(result);
+        return getRecord(select, result);
     }
-    public void getRecord(List<Integer> index){
+    public String orBitMap4cnt(String tablename, String select, String colname1, String cond1 , String colname2, String cond2){
+        String[] col1key = readMetaFile(colname1);
+        String[] col2key = readMetaFile(colname2);
+        int result = 0;
+
+        int col_num1 = Arrays.asList(col1key).indexOf(cond1);
+        int col_num2 = Arrays.asList(col2key).indexOf(cond2);
+
+        int total_file_num = getFileNum(colname1, colname1+"_"+col_num1);
+        for (int filenum = 0; filenum < total_file_num; filenum++) {
+
+            char[] bitStream1 = readFile(colname1, colname1 + "_" + col_num1, filenum);
+            char[] bitStream2 = readFile(colname2, colname2 + "_" + col_num2, filenum);
+
+            for (int i = 0; i < bitStream1.length; i++) {
+                if (bitStream1[i] == '1' || bitStream2[i] == '1') {
+                    result += 1;
+                }
+            }
+        }
+        return String.valueOf(result);
+    }
+    public String getRecord(String select, List<Integer> index){
         conJDBC();
-        jdbc.getRecords("cafe", index, "*");
+        return jdbc.getRecords("cafe", index, select);
     }
     public void updateBitmap(String[] targs){
         String[] bitmapData = {targs[2],targs[3],targs[4],targs[5]};
@@ -133,18 +217,23 @@ public class BitMap {
 
                 File[] flist = f.listFiles();
                 for(int j=0;j<flist.length;j++){
-                    String filename = flist[i].getName();
-                    int file_num = Integer.parseInt(filename.split("_")[1]);
+                    String filename = flist[j].getName();
+                    String[] splited = filename.split("_");
+                    if(splited[1].equals("metadata.txt")){
+                        continue;
+                    }
+                    int file_num = Integer.parseInt(splited[1]);
+                    int total_file_num = getFileNum(COLNAMES[i], filename) - 1;
                     if(col_num==file_num){
                         try {
-                            PrintWriter pw = new PrintWriter(new FileWriter("./"+COLNAMES[i]+"/" + filename + ".txt",true));
+                            PrintWriter pw = new PrintWriter(new FileWriter("./"+COLNAMES[i]+"/" + filename + "/" +  total_file_num +".txt",true));
                             pw.print(1);
                             pw.close();
                         }catch(IOException e){e.printStackTrace();}
                     }
                     else{
                         try {
-                            PrintWriter pw = new PrintWriter(new FileWriter("./"+COLNAMES[i]+"/" + filename + ".txt",true));
+                            PrintWriter pw = new PrintWriter(new FileWriter("./"+COLNAMES[i]+"/" + filename + "/" + total_file_num +".txt",true));
                             pw.print(0);
                             pw.close();
                         }catch(IOException e){e.printStackTrace();}
