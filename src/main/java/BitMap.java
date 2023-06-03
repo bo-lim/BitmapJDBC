@@ -1,5 +1,8 @@
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class BitMap {
     JDBC jdbc = null;
@@ -18,17 +21,22 @@ public class BitMap {
                 System.out.println("dir 만들기 실패");
             }
             int cnt = 0;
-            for(int i=0;i<=BMArr.length;i+=bf){
+            for(int i=0;i<BMArr.length;i+=bf){
+                System.out.println("Write File : ./"+colname+"/" + filename + "/" + String.valueOf(cnt) + ".txt");
                 PrintWriter pw = new PrintWriter("./"+colname+"/" + filename + "/" + String.valueOf(cnt) + ".txt");
-                pw.print(BMArr);
+                for(int j=i;j<i+bf;j++){
+                    if(j>=BMArr.length){break;}
+                    pw.print(BMArr[j]);
+                }
                 cnt += 1;
                 pw.close();
             }
         }catch(IOException e){e.printStackTrace();}
     }
     public char[] readFile(String colname, String filename, int filenum){
-        String line = null;
+        String line = "";
         try {
+            System.out.println("Read File : ./" + colname + "/" + filename + "/" + String.valueOf(filenum) + ".txt");
             BufferedReader br = new BufferedReader(new FileReader("./" + colname + "/" + filename + "/" + String.valueOf(filenum) + ".txt"));
             line = br.readLine();
             br.close();
@@ -39,7 +47,8 @@ public class BitMap {
         String filename = colname + "_metadata";
         String line = null;
         try {
-            BufferedReader br = new BufferedReader(new FileReader("./"+colname+"/" +filename+".txt"));
+            System.out.println("Read Meta File : ./" + colname + "/" + filename + ".txt");
+            BufferedReader br = new BufferedReader(new FileReader("./" + colname + "/" + filename + ".txt"));
             line = br.readLine();
             br.close();
         }catch(IOException e){e.printStackTrace();}
@@ -57,8 +66,6 @@ public class BitMap {
             return -1;
         }
     }
-
-
     public void mkBitMap(String tablename, String colname){
         conJDBC();
         total = jdbc.getTCnt(tablename);
@@ -80,9 +87,7 @@ public class BitMap {
         }
         File f = new File(colname);
         boolean result = f.mkdir();
-        if(!result) {
-            System.out.println("dir 만들기 실패!!");
-        }
+        if(!result) {System.out.println("dir 만들기 실패!!");}
         String text = "";
         for(int i=0;i<map.size();i++) {
             text += map.get(i) + ",";
@@ -96,7 +101,7 @@ public class BitMap {
             writeFile(BMs[i].toCharArray(),colname, colname+'_'+Integer.toString(i));
         }
     }
-    public String oneCondBitMap4cnt(String tablename, String select, String colname1, String cond1){
+    public String oneCondBitMap4cnt(String tablename, String colname1, String cond1){
         String[] col1key = readMetaFile(colname1);
         int result = 0;
 
@@ -114,6 +119,7 @@ public class BitMap {
     }
 
     public String andBitMap(String tablename, String select, String colname1, String cond1 ,String colname2, String cond2){
+        System.out.println(colname1 +", "+ cond1+", "+ colname2+", "+ cond2);
         String[] col1key = readMetaFile(colname1);
         String[] col2key = readMetaFile(colname2);
         List<Integer> result = new ArrayList<Integer>();
@@ -123,13 +129,11 @@ public class BitMap {
 
         int total_file_num = getFileNum(colname1, colname1+"_"+col_num1);
         for (int filenum = 0; filenum < total_file_num; filenum++) {
-
             char[] bitStream1 = readFile(colname1, colname1 + "_" + col_num1, filenum);
             char[] bitStream2 = readFile(colname2, colname2 + "_" + col_num2, filenum);
-
             for (int i = 0; i < bitStream1.length; i++) {
                 if (bitStream1[i] == '1' && bitStream2[i] == '1') {
-                    result.add(i + 1);
+                    result.add(filenum*bf + i + 1);
                 }
             }
         }
@@ -167,13 +171,11 @@ public class BitMap {
 
         int total_file_num = getFileNum(colname1, colname1+"_"+col_num1);
         for (int filenum = 0; filenum < total_file_num; filenum++) {
-
             char[] bitStream1 = readFile(colname1, colname1 + "_" + col_num1, filenum);
             char[] bitStream2 = readFile(colname2, colname2 + "_" + col_num2, filenum);
-
             for (int i = 0; i < bitStream1.length; i++) {
                 if (bitStream1[i] == '1' || bitStream2[i] == '1') {
-                    result.add(i + 1);
+                    result.add(filenum*bf + i + 1);
                 }
             }
         }
@@ -214,26 +216,29 @@ public class BitMap {
                 String[] col_key = this.readMetaFile(COLNAMES[i]);
                 // 추가할 데이터의 번호 찾기
                 int col_num = Arrays.asList(col_key).indexOf(bitmapData[i]);
-
                 File[] flist = f.listFiles();
                 for(int j=0;j<flist.length;j++){
                     String filename = flist[j].getName();
                     String[] splited = filename.split("_");
-                    if(splited[1].equals("metadata.txt")){
-                        continue;
-                    }
+                    if(splited[1].equals("metadata.txt")){continue;}
                     int file_num = Integer.parseInt(splited[1]);
                     int total_file_num = getFileNum(COLNAMES[i], filename) - 1;
+                    char[] bitStream = readFile(COLNAMES[i], filename, total_file_num);
+                    if(bitStream.length > bf){
+                        total_file_num += 1;
+                    }
                     if(col_num==file_num){
                         try {
-                            PrintWriter pw = new PrintWriter(new FileWriter("./"+COLNAMES[i]+"/" + filename + "/" +  total_file_num +".txt",true));
+                            PrintWriter pw = new PrintWriter(new FileWriter("./"+COLNAMES[i]+"/" + filename
+                                    + "/" +  total_file_num +".txt",true));
                             pw.print(1);
                             pw.close();
                         }catch(IOException e){e.printStackTrace();}
                     }
                     else{
                         try {
-                            PrintWriter pw = new PrintWriter(new FileWriter("./"+COLNAMES[i]+"/" + filename + "/" + total_file_num +".txt",true));
+                            PrintWriter pw = new PrintWriter(new FileWriter("./"+COLNAMES[i]+"/" + filename
+                                    + "/" + total_file_num +".txt",true));
                             pw.print(0);
                             pw.close();
                         }catch(IOException e){e.printStackTrace();}
@@ -241,7 +246,5 @@ public class BitMap {
                 }
             }
         }
-
     }
-
 }
