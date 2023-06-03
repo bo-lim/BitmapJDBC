@@ -1,11 +1,5 @@
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.*;
-import java.sql.PreparedStatement;
 
 public class JDBC {
     private Statement stmt = null;
@@ -23,15 +17,14 @@ public class JDBC {
 
     public static Map optMap = new HashMap<Integer,String>();
 
-
     public Connection conDB(){
         Scanner sc = new Scanner(System.in);
         Connection conn = null;
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection("jdbc:mysql://localhost/cafe", "root", "11111111");
-
         }catch (ClassNotFoundException e){
+            e.printStackTrace();
             System.out.println("Failed Loading Driver");
         }catch (SQLException e){
             System.out.println("Error "+e);
@@ -50,7 +43,6 @@ public class JDBC {
 
     public void mkTable(String tablename) {
         Connection conn = conDB();
-
         try {
             stmt = conn.createStatement();
             String sql = "CREATE TABLE " + tablename + "("+
@@ -65,25 +57,25 @@ public class JDBC {
                     ")";
             stmt.execute(sql);
         }catch(SQLException e) {
-            e.printStackTrace();
+            System.out.println("이미 생성된 테이블");
         }finally {
             closeConn(conn);
         }
     }
     public void insertManyRecords(String tablename, int num){
         Connection conn = conDB();
-
         try{
             Random rand = new Random();
-            int j = 250;
+            int rand_id = rand.nextInt(1000000);
+            int j = rand.nextInt(1000000);
             String sql = "INSERT INTO " + tablename + " VALUES( 0, ?, ?, ?, ?, ?, ?, now())";
             pstmt = conn.prepareStatement(sql);
-            for(int i=1;i<num;i++) {
+            for(int i=1;i<=num;i++) {
                 if(i%7!=0){j++;}
                 int ctgNum = rand.nextInt(4);
                 int chcnum = rand.nextInt(4);
                 int optnum = rand.nextInt(2);
-                String[] args = {String.valueOf(3001+i),String.valueOf(j),ctgrs[ctgNum],
+                String[] args = {String.valueOf(rand_id+i),String.valueOf(j),ctgrs[ctgNum],
                         chcs[ctgNum][chcnum],opts[optnum],String.valueOf(prcs[ctgNum][chcnum])};
                 insertRecord(args);
             }
@@ -131,11 +123,10 @@ public class JDBC {
                     colname+ ")";
             stmt.execute(sql);
         }catch(SQLException e) {
-            e.printStackTrace();
+            System.out.println("인덱스 이미 존재");
         }finally {
             closeConn(conn);
         }
-
     }
     public int getTCnt(String tablename){
         Connection conn = conDB();
@@ -155,7 +146,6 @@ public class JDBC {
     public int getMapSize(String tablename,String colname){
         return optMap.size();
     }
-
     public Map getMap(){
         return optMap;
     }
@@ -166,7 +156,7 @@ public class JDBC {
         int[] resultSet = new int[cnt];
         try {
             stmt = conn.createStatement();
-            String sql = "SELECT "+colname+" FROM " + tablename;
+            String sql = "SELECT "+colname+" FROM " + tablename + " order by no";
             rs = stmt.executeQuery(sql);
 
             int idx = 0;
@@ -218,8 +208,7 @@ public class JDBC {
                     if (cols.trim().equals("*")) {
                         out += rs.getInt(2) + " " + rs.getInt(3) + " " +
                                 rs.getString(4) + " " + rs.getString(5) + " " +
-                                rs.getString(6) + " " + rs.getInt(7) + " " + rs.getDate(8) + "\n";
-
+                                rs.getString(6) + " " + rs.getInt(7) + " " + rs.getString(8) + "\n";
                     }
                     else{
                         out += "\n";
@@ -233,7 +222,6 @@ public class JDBC {
                 rs.close();
             }
             pstmt.close();
-
         }catch(SQLException e) {
             e.printStackTrace();
         }finally {
